@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import os
 
 # הגדרת תצורת הדף
 st.set_page_config(
@@ -45,13 +46,11 @@ st.markdown(
 @st.cache_data
 def load_data():
     import kagglehub
-    from kagglehub import KaggleDatasetAdapter
-
-    df = kagglehub.dataset_load(
-        KaggleDatasetAdapter.PANDAS,
-        "rush4ratio/video-game-sales-with-ratings",
-        "Video_Games_Sales_as_at_22_Dec_2016.csv",
-    )
+    
+    # Download dataset and load it via standard Pandas
+    path = kagglehub.dataset_download("rush4ratio/video-game-sales-with-ratings")
+    csv_path = os.path.join(path, "Video_Games_Sales_as_at_22_Dec_2016.csv")
+    df = pd.read_csv(csv_path)
     return df
 
 
@@ -121,8 +120,8 @@ st.dataframe(stats_summary, use_container_width=True)
 
 st.info("""
 **תובנה לגבי ערכים חסרים וממוצעים:**
-* **ערכים חסרים:** קיימים ערכים חסרים רבים בעמודות הדירוגים (`Critic_Score`, `User_Score`, `Rating` וכו'). הדבר נובע מכך שמשחקים ישנים רבים או משחקים יפניים לא עברו תהליך דירוג רשמי במערב.
-* **שנת יציאה ממוצעת:** 2006.5. בתקופה זו חלה קפיצה משמעותית בפופולריות המשחקים.
+- **ערכים חסרים:** קיימים ערכים חסרים רבים בעמודות הדירוגים (`Critic_Score`, `User_Score`, `Rating` וכו'). הדבר נובע מכך שמשחקים ישנים רבים או משחקים יפניים לא עברו תהליך דירוג רשמי במערב.
+- **שנת יציאה ממוצעת:** 2006.5. בתקופה זו חלה קפיצה משמעותית בפופולריות המשחקים.
 """)
 
 st.markdown("---")
@@ -132,8 +131,8 @@ st.header("3. הגדרת משתנה המטרה (y) והתכונות (X)")
 
 st.subheader("🎯 משתנה המטרה: `Global_Sales` (y)")
 st.write("""
-* **הסבר:** סך המכירות העולמיות של המשחק (במיליוני יחידות).
-* **נימוק:** יצירת מודל לחיזוי מכירות עולמיות מאפשרת לחברות פיתוח והפצה להעריך את הפוטנציאל הכלכלי של משחק עוד בשלבי התכנון.
+- **הסבר:** סך המכירות העולמיות של המשחק (במיליוני יחידות).
+- **נימוק:** יצירת מודל לחיזוי מכירות עולמיות מאפשרת לחברות פיתוח והפצה להעריך את הפוטנציאל הכלכלי של משחק עוד בשלבי התכנון.
 """)
 
 st.subheader("💡 התכונות שנבחרו לחיזוי (X):")
