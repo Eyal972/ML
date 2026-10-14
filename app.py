@@ -1,10 +1,10 @@
 import pandas as pd
 import streamlit as st
 
-# הגדרת תצורת הדף
+# הגדרת תצורת הדף (תיקון הפרמטר ל-layout)
 st.set_page_config(
     page_title="ניתוח נתוני מכירות משחקי וידאו",
-    page_layout="wide",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
