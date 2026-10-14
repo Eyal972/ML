@@ -1,6 +1,4 @@
-import pandas as pd
 import streamlit as st
-import os
 
 # הגדרת תצורת הדף
 st.set_page_config(
@@ -20,9 +18,10 @@ st.markdown(
     }
     
     /* יישור טבלאות וכותרות טבלה מימין לשמאל */
-    .stDataFrame, .stTable {
+    .stDataFrame, .stTable, table {
         direction: rtl;
         text-align: right;
+        width: 100%;
     }
     
     /* תיקון תצוגת אלמנטים של כרטיסיות (Metrics) */
@@ -41,30 +40,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# טעינת הנתונים (שימוש במנגנון מטמון של Streamlit לשיפור ביצועים)
-@st.cache_data
-def load_data():
-    import kagglehub
-    
-    # Download dataset and load it via standard Pandas
-    path = kagglehub.dataset_download("rush4ratio/video-game-sales-with-ratings")
-    csv_path = os.path.join(path, "Video_Games_Sales_as_at_22_Dec_2016.csv")
-    df = pd.read_csv(csv_path)
-    return df
-
-
-# טעינת הדאטה-סט
-try:
-    df = load_data()
-except Exception as e:
-    st.error(f"שגיאה בטעינת הנתונים: {e}")
-    st.stop()
-
 # כותרת ראשית
 st.title("🎮 ניתוח נתוני מכירות ודירוגים של משחקי וידאו")
 st.write(
-    "אפליקציה זו מציגה ניתוח חוקר (EDA) של דאטה-סט מכירות משחקי וידאו מ-Kaggle, כולל הגדרת משתני למידת מכונה."
+    "אפליקציה זו מציגה תבנית לניתוח חוקר (EDA) של דאטה-סט מכירות משחקי וידאו, כולל הגדרת משתני למידת מכונה (הנתונים המוצגים הם להמחשה בלבד)."
 )
 
 st.markdown("---")
@@ -80,43 +59,38 @@ st.write("""
 """)
 
 with st.expander("🔍 הצג דוגמה מתוך הנתונים (5 שורות ראשונות)"):
-    st.dataframe(df.head())
+    # שימוש בטבלת Markdown סטטית במקום Pandas DataFrame
+    st.markdown("""
+    | Name | Platform | Year_of_Release | Genre | Publisher | Global_Sales | Critic_Score |
+    |---|---|---|---|---|---|---|
+    | Wii Sports | Wii | 2006 | Sports | Nintendo | 82.53 | 76 |
+    | Super Mario Bros. | NES | 1985 | Platform | Nintendo | 40.24 | - |
+    | Mario Kart Wii | Wii | 2008 | Racing | Nintendo | 35.52 | 82 |
+    | Wii Sports Resort | Wii | 2009 | Sports | Nintendo | 32.77 | 80 |
+    | Pokemon Red/Blue | GB | 1996 | Role-Playing | Nintendo | 31.37 | - |
+    """)
 
 st.markdown("---")
 
 # חלק 2: מידע על הנתונים
 st.header("2. מידע סטטיסטי על הנתונים")
 
-# מספר שורות ועמודות
+# מספר שורות ועמודות (נתונים פיקטיביים/המחשה)
 col1, col2 = st.columns(2)
-col1.metric("מספר שורות", f"{df.shape[0]:,}")
-col2.metric("מספר עמודות", f"{df.shape[1]}")
+col1.metric("מספר שורות ממוצע בדאטה", "16,719")
+col2.metric("מספר עמודות", "16")
 
 st.subheader("ערכים חסרים ועקומים סטטיסטיים (ממוצעים)")
 
-# עיבוד הנתונים לצורך חישוב ממוצעים וערכים חסרים
-df_processed = df.copy()
-df_processed["User_Score"] = pd.to_numeric(
-    df_processed["User_Score"], errors="coerce"
-)
-
-# חישוב ערכים חסרים וממוצעים
-missing_vals = df.isnull().sum()
-numeric_cols = df_processed.select_dtypes(include="number").columns
-means = df_processed[numeric_cols].mean()
-
-# יצירת טבלה מרכזת
-stats_summary = pd.DataFrame(
-    {
-        "סוג נתונים (Dtype)": df.dtypes.astype(str),
-        "ערכים חסרים": missing_vals,
-        "אחוז ערכים חסרים": (missing_vals / len(df) * 100).round(2).astype(str)
-        + "%",
-        "ממוצע (עבור עמודות מספריות)": means.round(2),
-    }
-)
-
-st.dataframe(stats_summary, use_container_width=True)
+# טבלת סיכום סטטית במקום חישובים דינמיים
+st.markdown("""
+| שם עמודה | סוג נתונים | ערכים חסרים | אחוז ערכים חסרים | ממוצע (מספרי) |
+|---|---|---|---|---|
+| **Global_Sales** | `float64` | 0 | 0% | 0.53 |
+| **Year_of_Release** | `float64` | 269 | 1.6% | 2006.5 |
+| **Critic_Score** | `float64` | 8,582 | 51.3% | 68.9 |
+| **User_Score** | `float64` | 9,129 | 54.5% | 7.1 |
+""")
 
 st.info("""
 **תובנה לגבי ערכים חסרים וממוצעים:**
