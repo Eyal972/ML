@@ -1,11 +1,43 @@
 import pandas as pd
 import streamlit as st
 
-# הגדרת תצורת הדף (תיקון הפרמטר ל-layout)
+# הגדרת תצורת הדף
 st.set_page_config(
     page_title="ניתוח נתוני מכירות משחקי וידאו",
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+# הוספת CSS לתמיכה מלאה בעברית (RTL) ויישור טקסטים
+st.markdown(
+    """
+    <style>
+    /* הגדרת כיוון הטקסט מימין לשמאל לכל הדף */
+    html, body, [class*="css"], div, p, span, h1, h2, h3, h4, h5, h6 {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* יישור טבלאות וכותרות טבלה מימין לשמאל */
+    .stDataFrame, .stTable {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* תיקון תצוגת אלמנטים של כרטיסיות (Metrics) */
+    [data-testid="stMetricValue"] {
+        direction: ltr;
+        text-align: right;
+    }
+    
+    /* יישור תיבות נפתחות (Expander) */
+    .streamlit-expanderHeader {
+        direction: rtl;
+        text-align: right;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -15,7 +47,6 @@ def load_data():
     import kagglehub
     from kagglehub import KaggleDatasetAdapter
 
-    # טעינת הנתונים מ-Kaggle
     df = kagglehub.dataset_load(
         KaggleDatasetAdapter.PANDAS,
         "rush4ratio/video-game-sales-with-ratings",
