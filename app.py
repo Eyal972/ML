@@ -1,120 +1,213 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-# Page Configuration
-st.set_page_config(page_title="ניתוח משחקי וידאו", page_icon="🎮", layout="wide")
-
-# Custom RTL (Right-to-Left) Styling for Hebrew
-st.markdown(
-    """
-    <style>
-    /* Force RTL direction for the whole app */
-    html, body, [class*="css"] {
-        direction: rtl;
-        text-align: right;
-    }
-    .stMarkdown, .stText, .stHeader, .stSubheader, .stTitle, p, div, ul, li {
-        direction: rtl;
-        text-align: right;
-    }
-    /* Align bullet lists properly in RTL */
-    ul {
-        margin-right: 1.5rem;
-        margin-left: 0rem;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
+# הגדרת תצורת הדף
+st.set_page_config(
+    page_title="ניתוח נתוני מכירות משחקי וידאו",
+    page_layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# Main Title
+
+# טעינת הנתונים (שימוש במנגנון מטמון של Streamlit לשיפור ביצועים)
+@st.cache_data
+def load_data():
+    import kagglehub
+    from kagglehub import KaggleDatasetAdapter
+
+    # טעינת הנתונים מ-Kaggle
+    df = kagglehub.dataset_load(
+        KaggleDatasetAdapter.PANDAS,
+        "rush4ratio/video-game-sales-with-ratings",
+        "Video_Games_Sales_as_at_22_Dec_2016.csv",
+    )
+    return df
+
+
+# טעינת הדאטה-סט
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"שגיאה בטעינת הנתונים: {e}")
+    st.stop()
+
+# כותרת ראשית
 st.title("🎮 ניתוח נתוני מכירות ודירוגים של משחקי וידאו")
+st.write(
+    "אפליקציה זו מציגה ניתוח חוקר (EDA) של דאטה-סט מכירות משחקי וידאו מ-Kaggle, כולל הגדרת משתני למידת מכונה."
+)
+
 st.markdown("---")
 
-# 1. Dataset Explanation
-st.header("📌 הסבר על הדאטה שנבחר")
-st.write(
-    "הנתונים נלקחו מהמאגר **Video Game Sales with Ratings** של קגל (Kaggle)."
-)
-st.write("כל שורה בדאטה מייצגת משחק וידאו, וכוללת פרטים מרכזיים אודותיו:")
+# חלק 1: הסבר על הדאטה שנבחר
+st.header("1. הסבר על הדאטה שנבחר")
+st.write("""
+**על מה הדאטה?** 
+הדאטה-סט כולל מידע על מכירות משחקי וידאו ברחבי העולם, לצד דירוגי מבקרים ומשתמשים, פלטפורמות, ז'אנרים וחברות מפיצות/מפתחות.
 
-st.markdown("""
-- **Name (שם):** קטגוריה המייצגת את שם משחק הווידאו.
-- **Year_of_Release (שנת יציאה):** השנה שבה המשחק יצא לשוק.
-- **Publisher (מפיצה):** החברה שהפיצה והוציאה לאור את המשחק.
-- **Critic_Score (ציון מבקרים):** הציון הממוצע שקיבל המשחק ממבקרי משחקים מקצועיים.
-- **Critic_Count (מספר מבקרים):** כמות המבקרים המקצועיים שכתבו ביקורת ונתנו ציון למשחק.
-- **User_Score (ציון משתמשים):** הציון הממוצע שניתן למשחק על ידי שחקנים מהקהל הרחב.
-- **User_Count (מספר משתמשים):** כמות השחקנים מהקהל הרחב שדירגו את המשחק.
-- **Rating (סיווג גיל):** דירוג ההתאמה לגילאים של המשחק לפי ארגוני הסמכה.
+**מה מייצגת כל שורה?**
+כל שורה בדאטה-סט מייצגת **משחק וידאו יחיד** ויציאתו לפלטפורמה ספציפית (לדוגמה: המשחק Wii Sports עבור קונסולת Wii).
 """)
 
+with st.expander("🔍 הצג דוגמה מתוך הנתונים (5 שורות ראשונות)"):
+    st.dataframe(df.head())
+
 st.markdown("---")
 
-# 2. Dataset Information
-st.header("📊 מידע על הנתונים")
+# חלק 2: מידע על הנתונים
+st.header("2. מידע סטטיסטי על הנתונים")
+
+# מספר שורות ועמודות
 col1, col2 = st.columns(2)
+col1.metric("מספר שורות", f"{df.shape[0]:,}")
+col2.metric("מספר עמודות", f"{df.shape[1]}")
 
-with col1:
-    st.subheader("מימדי הטבלה")
-    st.write("**מספר השורות (Rows):** 16,719")
-    st.write("**מספר העמודות (Columns):** 8")
+st.subheader("ערכים חסרים ועקומים סטטיסטיים (ממוצעים)")
 
-    st.subheader("ממוצעים (Averages)")
-    st.write("הממוצעים עבור העמודות המספריות שנבחרו:")
-    st.markdown("""
-    * **שנת יציאה (Year_of_Release):** 2006.49
-    * **ציון מבקרים (Critic_Score):** 68.97
-    * **כמות מבקרים (Critic_Count):** 26.36
-    * **ציון משתמשים (User_Score):** 7.13
-    * **כמות משתמשים (User_Count):** 162.23
-    """)
-    st.info(
-        "💡 **תובנה:** הגיוני ששנת היציאה הממוצעת היא סביב 2006, כיוון שבתקופה"
-        " זו משחקי מחשב הפכו לפופולריים מאוד וחברות רבות הוציאו משחקים. כמו כן,"
-        " ממוצע של 26 מבקרים למשחק הוא סביר כי לרוב רק למשחקים גדולים יש כמות"
-        " מבקרים גבוהה."
+# עיבוד הנתונים לצורך חישוב ממוצעים וערכים חסרים
+df_processed = df.copy()
+df_processed["User_Score"] = pd.to_numeric(
+    df_processed["User_Score"], errors="coerce"
+)
+
+# חישוב ערכים חסרים וממוצעים
+missing_vals = df.isnull().sum()
+numeric_cols = df_processed.select_dtypes(include="number").columns
+means = df_processed[numeric_cols].mean()
+
+# יצירת טבלה מרכזת
+stats_summary = pd.DataFrame(
+    {
+        "סוג נתונים (Dtype)": df.dtypes.astype(str),
+        "ערכים חסרים": missing_vals,
+        "אחוז ערכים חסרים": (missing_vals / len(df) * 100).round(2).astype(str)
+        + "%",
+        "ממוצע (עבור עמודות מספריות)": means.round(2),
+    }
+)
+
+st.dataframe(stats_summary, use_container_width=True)
+
+st.info("""
+**תובנה לגבי ערכים חסרים וממוצעים:**
+* **ערכים חסרים:** קיימים ערכים חסרים רבים בעמודות הדירוגים (`Critic_Score`, `User_Score`, `Rating` וכו'). הדבר נובע מכך שמשחקים ישנים רבים או משחקים יפניים לא עברו תהליך דירוג רשמי במערב.
+* **שנת יציאה ממוצעת:** 2006.5. בתקופה זו חלה קפיצה משמעותית בפופולריות המשחקים.
+""")
+
+st.markdown("---")
+
+# חלק 3: הגדרת y ו-X כולל נימוקים
+st.header("3. הגדרת משתנה המטרה (y) והתכונות (X)")
+
+st.subheader("🎯 משתנה המטרה: `Global_Sales` (y)")
+st.write("""
+* **הסבר:** סך המכירות העולמיות של המשחק (במיליוני יחידות).
+* **נימוק:** יצירת מודל לחיזוי מכירות עולמיות מאפשרת לחברות פיתוח והפצה להעריך את הפוטנציאל הכלכלי של משחק עוד בשלבי התכנון.
+""")
+
+st.subheader("💡 התכונות שנבחרו לחיזוי (X):")
+
+col_x1, col_x2, col_x3 = st.columns(3)
+
+with col_x1:
+    st.markdown("### 1. Year_of_Release")
+    st.write(
+        "**נימוק:** שנת היציאה משפיעה על גודל השוק והביקוש באותה תקופה (כפי שראינו, תקופת השיא הייתה באזור שנת 2006)."
     )
 
-with col2:
-    st.subheader("ערכים חסרים (Missing Values)")
-    st.write("פירוט הערכים החסרים לכל עמודה:")
-    st.markdown("""
-    * **Name:** 2
-    * **Year_of_Release:** 269
-    * **Publisher:** 54
-    * **Critic_Score:** 8,582
-    * **Critic_Count:** 8,582
-    * **User_Score:** 6,704
-    * **User_Count:** 9,129
-    * **Rating:** 6,769
-    """)
-    st.warning(
-        "⚠️ **הסיבה לחוסרים:** חסרים דירוגים רבים למשחקים כי משחקים ישנים יצאו"
-        " לפני הקמת ארגוני הסמכה רשמיים בעולם. כמו כן, משחקים קטנים או כאלו"
-        " שיצאו רק ביפן מעולם לא עברו תהליך דירוג במערב ולא זכו לביקורות"
-        " אינטרנטיות."
+with col_x2:
+    st.markdown("### 2. Critic_Score")
+    st.write(
+        "**נימוק:** ציון המבקרים המקצועיים משקף את איכות המשחק. ככל שהציון גבוה יותר, כך גדל הסיכוי שהמשחק ימכור עותקים רבים יותר."
+    )
+
+with col_x3:
+    st.markdown("### 3. Critic_Count")
+    st.write(
+        "**נימוק:** כמות המבקרים שסיקרו את המשחק מעידה על רמת ההד התקשורתי והפופולריות שלו בשוק."
     )
 
 st.markdown("---")
 
-# 3. Machine Learning Model Setup
-st.header("🎯 בניית מודל החיזוי (למידת מכונה)")
-st.write(
-    "**מה נרצה לחזות (y)?** כמות המכירות של המשחק (מספר היחידות שיימכרו)."
+# חלק ויזואליזציות (בונוס מתוך הקוד)
+st.header("📊 ויזואליזציה של הנתונים")
+
+tab1, tab2, tab3 = st.tabs(
+    [
+        "ממוצע מבקרים לפי שנה",
+        "15 המפיצות המובילות בדירוג",
+        "כמות משחקים לפי שנה",
+    ]
 )
-st.write(
-    "**באמצעות אילו עמודות נחזה (X)?** נבחר להשתמש ב-3 עמודות מרכזיות, ולהלן"
-    " הנימוקים לבחירה:"
-)
 
-st.markdown("""
-1. 📅 **שנת היציאה (Year_of_Release):**  
-כפי שראינו, השנה הממוצעת ליציאת משחקים היא 2006. בשנה זו היה ביקוש רב מאוד למשחקי וידאו, ולכן הרבה יותר יחידות יכלו להימכר לכל משחק בפני עצמו. השנה היא אינדיקציה מעולה לנפח השוק.
+with tab1:
+    st.subheader("הקשר בין שנת היציאה לבין ממוצע כמות המבקרים המקצועיים")
+    df_filtered = df.copy()
+    df_filtered["Year_of_Release"] = pd.to_numeric(
+        df_filtered["Year_of_Release"], errors="coerce"
+    )
+    df_filtered["Critic_Count"] = pd.to_numeric(
+        df_filtered["Critic_Count"], errors="coerce"
+    )
+    df_filtered = df_filtered.dropna(
+        subset=["Year_of_Release", "Critic_Count"]
+    )
 
-2. ⭐ **דירוג מבקרים מקצועיים (Critic_Score):**  
-מבקרים מקצועיים מדרגים לפי קריטריונים מאוד ספציפיים. לרוב, ככל שהדירוג של המבקרים גבוה יותר, כך המשחק יימכר טוב יותר ויזכה לאמון הציבור.
+    avg_critics = (
+        df_filtered.groupby("Year_of_Release")["Critic_Count"]
+        .mean()
+        .sort_index()
+    )
 
-3. ✍️ **כמות הדירוגים של המבקרים (Critic_Count):**  
-ככל שיותר מבקרים מקצועיים השקיעו מזמנם כדי לבקר את המשחק, המשמעות היא שכנראה המשחק מפורסם יותר ומכר הרבה יותר יחידות.
-""")
+    fig1, ax1 = plt.subplots(figsize=(10, 4))
+    ax1.plot(
+        avg_critics.index, avg_critics.values, marker="o", linestyle="-"
+    )
+    ax1.set_title("Average Number of Professional Critics by Release Year")
+    ax1.set_xlabel("Release Year")
+    ax1.set_ylabel("Average Number of Professional Critics")
+    ax1.grid(True, alpha=0.3)
+    st.pyplot(fig1)
+
+with tab2:
+    st.subheader("15 המפיצות (Publishers) עם ממוצע דירוג המבקרים הגבוה ביותר")
+    df_publisher = df.dropna(subset=["Publisher", "Critic_Score"]).copy()
+    df_publisher["Critic_Score"] = pd.to_numeric(
+        df_publisher["Critic_Score"], errors="coerce"
+    )
+    df_publisher = df_publisher.dropna(subset=["Critic_Score"])
+
+    publisher_ratings = (
+        df_publisher.groupby("Publisher")["Critic_Score"]
+        .mean()
+        .sort_values(ascending=False)
+        .head(15)
+    )
+
+    fig2, ax2 = plt.subplots(figsize=(10, 4))
+    ax2.bar(publisher_ratings.index, publisher_ratings.values)
+    ax2.set_title("Top 15 Publishers by Average Critic Score")
+    ax2.set_xlabel("Publisher")
+    ax2.set_ylabel("Average Critic Score")
+    plt.xticks(rotation=45, ha="right")
+    ax2.grid(axis="y", alpha=0.3)
+    st.pyplot(fig2)
+
+with tab3:
+    st.subheader("כמות המשחקים שיצאו לפי שנה")
+    df_years = df.dropna(subset=["Year_of_Release"]).copy()
+    df_years["Year_of_Release"] = pd.to_numeric(
+        df_years["Year_of_Release"], errors="coerce"
+    )
+    df_years = df_years.dropna(subset=["Year_of_Release"])
+
+    games_per_year = df_years.groupby("Year_of_Release").size().sort_index()
+
+    fig3, ax3 = plt.subplots(figsize=(10, 4))
+    ax3.bar(games_per_year.index, games_per_year.values)
+    ax3.set_title("Number of Games Released per Year")
+    ax3.set_xlabel("Release Year")
+    ax3.set_ylabel("Number of Games")
+    ax3.grid(axis="y", alpha=0.3)
+    st.pyplot(fig3)
